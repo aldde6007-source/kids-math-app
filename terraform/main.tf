@@ -5,6 +5,12 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket = "kids-math-app-tfstate-bucket"
+    key    = "state/terraform.tfstate"
+    region = "ap-northeast-1"
+  }
 }
 
 provider "aws" {
@@ -14,7 +20,7 @@ provider "aws" {
 # DynamoDB
 resource "aws_dynamodb_table" "kids_math" {
   name         = "KidsMathScores"
-  billing_mode = "PAY_PER_REQUEST" # 無料枠内でおさまるオンデマンド
+  billing_mode = "PAY_PER_REQUEST"
   hash_key     = "userId"
 
   attribute {
