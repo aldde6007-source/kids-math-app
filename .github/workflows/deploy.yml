@@ -24,7 +24,7 @@ jobs:
 
       - name: Create S3 Bucket for Terraform State if not exists
         run: |
-          BUCKET_NAME="kids-math-app-tfstate-bucket"
+          BUCKET_NAME="kids-math-app-tfstate-tomo2026"
           if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
             echo "Creating S3 bucket $BUCKET_NAME..."
             aws s3api create-bucket --bucket "$BUCKET_NAME" --region ap-northeast-1 --create-bucket-configuration LocationConstraint=ap-northeast-1
