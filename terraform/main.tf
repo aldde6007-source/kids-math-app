@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "kids-math-app-tfstate-bucket"
+    bucket = "kids-math-app-tfstate-tomo2026"
     key    = "state/terraform.tfstate"
     region = "ap-northeast-1"
   }
