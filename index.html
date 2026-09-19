@@ -3,33 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>さんすう タイマーアタック！</title>
+    <title>きょうりゅう さんすう タイマーアタック！</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f9ff; text-align: center; padding: 20px; color: #333; }
-        .card { background: white; border-radius: 20px; padding: 30px; max-width: 450px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h1 { font-size: 24px; color: #0284c7; }
-        .stats { display: flex; justify-content: space-around; font-size: 18px; margin-bottom: 20px; font-weight: bold; }
-        .points { color: #eab308; }
-        .timer { color: #ef4444; }
-        .question { font-size: 48px; font-weight: bold; margin: 20px 0; color: #1e293b; }
-        input[type="number"] { font-size: 32px; width: 120px; text-align: center; border: 3px solid #38bdf8; border-radius: 10px; padding: 5px; outline: none; }
-        button { font-size: 20px; font-weight: bold; padding: 12px 24px; border: none; border-radius: 12px; background-color: #0284c7; color: white; cursor: pointer; margin-top: 15px; }
-        button:hover { background-color: #0369a1; }
-        .feedback { font-size: 28px; font-weight: bold; height: 40px; margin-top: 10px; }
-        .correct { color: #22c55e; }
-        .wrong { color: #ef4444; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0fdf4; text-align: center; padding: 20px; color: #166534; }
+        .card { background: white; border-radius: 20px; padding: 25px; max-width: 480px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 4px solid #bbf7d0; }
+        h1 { font-size: 22px; color: #15803d; margin-bottom: 10px; }
+        .stats { display: flex; justify-content: space-around; font-size: 18px; margin-bottom: 15px; font-weight: bold; background: #f0fdf4; padding: 10px; border-radius: 10px; }
+        .points { color: #d97706; }
+        .timer { color: #dc2626; }
+        .question { font-size: 48px; font-weight: bold; margin: 15px 0; color: #14532d; }
+        input[type="number"] { font-size: 32px; width: 120px; text-align: center; border: 3px solid #4ade80; border-radius: 10px; padding: 5px; outline: none; }
+        button { font-size: 18px; font-weight: bold; padding: 12px 20px; border: none; border-radius: 12px; background-color: #16a34a; color: white; cursor: pointer; margin-top: 15px; }
+        button:hover { background-color: #15803d; }
+        .feedback { font-size: 26px; font-weight: bold; height: 35px; margin-top: 10px; }
+        .correct { color: #16a34a; }
+        .wrong { color: #dc2626; }
         .hidden { display: none; }
+        /* 恐竜図鑑スタイル */
+        .dino-collection { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 15px; background: #fef2f2; padding: 10px; border-radius: 12px; }
+        .dino-badge { font-size: 30px; background: white; padding: 5px 10px; border-radius: 10px; border: 2px solid #fca5a5; }
+        .locked { filter: grayscale(100%); opacity: 0.3; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>せいかいして ポイントGET！</h1>
+    <h1>🦖 きょうりゅう さんすう パーク 🦕</h1>
     
     <div id="start-screen">
         <p>1ねんせいの さんすう もんだい（30びょう）</p>
-        <p>ぜんぶで なんてん とれるかな？</p>
-        <button onclick="startGame()">スタート！</button>
+        <p>せいかいして ポイントをためると<br><b>きょうりゅうの たまご</b> が われるよ！</p>
+        <button onclick="startGame()">ゲットしにいく！</button>
+
+        <h3 style="margin-top:20px; font-size:16px;">まいにちの きょうりゅうずかん</h3>
+        <div class="dino-collection" id="dino-list"></div>
     </div>
 
     <div id="game-screen" class="hidden">
@@ -49,14 +56,41 @@
         <p>せいかいすう: <span id="final-score" style="font-size:24px; font-weight:bold;">0</span> もん</p>
         <p>かくとくポイント: <span id="gained-points" class="points" style="font-size:24px; font-weight:bold;">0</span> pt</p>
         <p>ごうけいポイント: <span id="total-points" class="points" style="font-size:24px; font-weight:bold;">0</span> pt</p>
+        
+        <div id="hatch-message" style="font-size: 20px; font-weight: bold; color: #dc2626; margin: 15px 0;"></div>
+
         <button onclick="startGame()">もういちど あそぶ</button>
     </div>
 </div>
 
 <script>
+    // ★ご自身の API Gateway URL を貼り付けてください
     const API_URL = "https://vv06qa0nw9.execute-api.ap-northeast-1.amazonaws.com/score";
 
+    // 登場する恐竜たち（必要ポイントと絵文字）
+    const DINOS = [
+        { name: "トリケラトプス", pt: 30, emoji: "🥦 🦖" },
+        { name: "プテラノドン", pt: 60, emoji: "🦅 🦕" },
+        { name: "ティラノサウルス", pt: 100, emoji: "🍖 🦖" },
+        { name: "ブラキオサウルス", pt: 150, emoji: "🌴 🦕" },
+        { name: "スピノサウルス", pt: 200, emoji: "👑 🦖" }
+    ];
+
     let timer, timeLeft = 30, score = 0, totalPoints = 0, currentAns = 0;
+
+    // 図鑑の描画
+    function renderDinoList() {
+        const listContainer = document.getElementById('dino-list');
+        listContainer.innerHTML = '';
+        DINOS.forEach(dino => {
+            const badge = document.createElement('div');
+            const isUnlocked = totalPoints >= dino.pt;
+            badge.className = `dino-badge ${isUnlocked ? '' : 'locked'}`;
+            badge.title = `${dino.name} (${dino.pt}pt必要)`;
+            badge.innerText = isUnlocked ? dino.emoji : "🥚";
+            listContainer.appendChild(badge);
+        });
+    }
 
     function generateQuestion() {
         const isAddition = Math.random() > 0.5;
@@ -103,7 +137,7 @@
             score++;
             totalPoints += 10;
             document.getElementById('points').innerText = totalPoints;
-            feedback.innerText = "○ せいかい！";
+            feedback.innerText = "○ せいかい！ 🍖GET";
             feedback.className = "feedback correct";
         } else {
             feedback.innerText = "× おしい！";
@@ -118,9 +152,21 @@
         clearInterval(timer);
         document.getElementById('game-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
+        
         document.getElementById('final-score').innerText = score;
         document.getElementById('gained-points').innerText = score * 10;
         document.getElementById('total-points').innerText = totalPoints;
+
+        // 新しく孵化した恐竜があるかチェック
+        const hatchedDino = DINOS.slice().reverse().find(dino => totalPoints >= dino.pt);
+        const hatchMsg = document.getElementById('hatch-message');
+        if (hatchedDino) {
+            hatchMsg.innerText = `🎉 たまごが われて 【${hatchedDino.name}】 を ゲットしたよ！`;
+        } else {
+            hatchMsg.innerText = `あと ${DINOS[0].pt - totalPoints} pt で たまごが われるよ！`;
+        }
+
+        renderDinoList();
 
         try {
             await fetch(API_URL, {
@@ -128,11 +174,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: 'child1', points: totalPoints, score: score })
             });
-            console.log("Score saved!");
         } catch (err) {
             console.error("Save error:", err);
         }
     }
+
+    // 初期表示で図鑑を描画
+    renderDinoList();
 </script>
 </body>
 </html>
