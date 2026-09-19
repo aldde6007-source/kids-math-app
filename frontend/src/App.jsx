@@ -18,7 +18,7 @@ export default function App() {
   });
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
-  const [question, setQuestion] = useState({ text: '', ans: 0 });
+  const [question, setQuestion] = useState({ num1: 0, num2: 0, isAddition: true, ans: 0 });
   const [inputVal, setInputVal] = useState('');
   const [feedback, setFeedback] = useState({ text: '', type: '' });
   const [resultData, setResultData] = useState({ newlyHatched: null, nextDino: null, gained: 0 });
@@ -35,21 +35,23 @@ export default function App() {
     return () => clearInterval(timer);
   }, [gameState, timeLeft]);
 
+  // 5歳児向けの問題生成（答えが最大10まで）
   const generateQuestion = () => {
-    const isAddition = Math.random() > 0.5;
-    let num1, num2, ans, text;
+    const isAddition = Math.random() > 0.4; // 6割は足し算
+    let num1, num2, ans;
+
     if (isAddition) {
-      num1 = Math.floor(Math.random() * 9) + 1;
-      num2 = Math.floor(Math.random() * 9) + 1;
+      // 答えが 2 〜 10 に収まるように設定
+      num1 = Math.floor(Math.random() * 5) + 1; // 1〜5
+      num2 = Math.floor(Math.random() * 5) + 1; // 1〜5
       ans = num1 + num2;
-      text = `${num1} + ${num2} = ?`;
     } else {
-      num1 = Math.floor(Math.random() * 10) + 5;
-      num2 = Math.floor(Math.random() * num1) + 1;
+      // 5〜9 から 1〜4 を引く形
+      num1 = Math.floor(Math.random() * 5) + 3; // 3〜7
+      num2 = Math.floor(Math.random() * (num1 - 1)) + 1; // 1 〜 (num1-1)
       ans = num1 - num2;
-      text = `${num1} - ${num2} = ?`;
     }
-    setQuestion({ text, ans });
+    setQuestion({ num1, num2, isAddition, ans });
   };
 
   const startGame = () => {
@@ -75,7 +77,7 @@ export default function App() {
       });
       setFeedback({ text: "○ せいかい！ 🍖GET", type: "correct" });
     } else {
-      setFeedback({ text: "× おしい！", type: "wrong" });
+      setFeedback({ text: "× おしい！ もういちど かぞえてみよう", type: "wrong" });
     }
     setInputVal('');
     generateQuestion();
@@ -103,11 +105,43 @@ export default function App() {
     }
   };
 
-  // ★ 図鑑リセット処理（確認ダイアログ付き）
   const resetProgress = () => {
     if (window.confirm("ずかんを リセットして さいしょから あそぶ？")) {
       localStorage.removeItem('kids_math_total_points');
       setTotalPoints(0);
+    }
+  };
+
+  // りんご（絵文字）を敷き詰めて表示する関数
+  const renderApples = () => {
+    const { num1, num2, isAddition } = question;
+
+    if (isAddition) {
+      // 足し算：左の群と右の群を分かりやすく分けて表示
+      return (
+        <div style={{ fontSize: '36px', margin: '15px 0', lineHeight: '1.4', wordBreak: 'break-all' }}>
+          <span style={{ backgroundColor: '#fef3c7', padding: '4px 8px', borderRadius: '10px' }}>
+            {"🍎".repeat(num1)}
+          </span>
+          <span style={{ fontSize: '28px', margin: '0 8px', fontWeight: 'bold' }}>＋</span>
+          <span style={{ backgroundColor: '#e0e7ff', padding: '4px 8px', borderRadius: '10px' }}>
+            {"🍎".repeat(num2)}
+          </span>
+        </div>
+      );
+    } else {
+      // 引き算：残るりんごと、ひく分のりんご（食べたイメージ）を区別
+      const remaining = num1 - num2;
+      return (
+        <div style={{ fontSize: '36px', margin: '15px 0', lineHeight: '1.4', wordBreak: 'break-all' }}>
+          <span style={{ backgroundColor: '#fef3c7', padding: '4px 8px', borderRadius: '10px' }}>
+            {"🍎".repeat(remaining)}
+          </span>
+          <span style={{ opacity: 0.3, padding: '4px 4px' }} title="たべちゃった！">
+            {"🍽️".repeat(num2)}
+          </span>
+        </div>
+      );
     }
   };
 
@@ -117,7 +151,7 @@ export default function App() {
 
       {gameState === 'start' && (
         <div>
-          <p>1ねんせいの さんすう もんだい（30びょう）</p>
+          <p style={{ fontSize: '16px', fontWeight: 'bold' }}>りんごを かぞえて みよう！（30びょう）</p>
           <p>せいかいして ポイントをためると<br /><b>きょうりゅうの たまご</b> が われるよ！</p>
           <p>ぜんぶの ポイント: <span className="points" style={{ fontWeight: 'bold' }}>{totalPoints}</span> pt</p>
           <button onClick={startGame}>ゲットしにいく！</button>
@@ -134,7 +168,6 @@ export default function App() {
             })}
           </div>
 
-          {/* ★ 図鑑リセットボタン */}
           <div style={{ marginTop: '25px' }}>
             <button 
               onClick={resetProgress} 
@@ -152,7 +185,15 @@ export default function App() {
             <div>のこり: <span className="timer">{timeLeft}</span>びょう</div>
             <div>ポイント: <span className="points">{totalPoints}</span> pt</div>
           </div>
-          <div className="question">{question.text}</div>
+
+          {/* 数式テキスト */}
+          <div className="question">
+            {question.num1} {question.isAddition ? '+' : '-'} {question.num2} = ?
+          </div>
+
+          {/* ★ 指で数えられる りんご表示エリア */}
+          {renderApples()}
+
           <input
             ref={inputRef}
             type="number"
