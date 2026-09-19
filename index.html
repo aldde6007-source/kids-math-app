@@ -64,21 +64,21 @@
 </div>
 
 <script>
-    // ★ご自身の API Gateway URL を貼り付けてください
+    // ★ご自身の API Gateway URL に書き換えてください
     const API_URL = "https://vv06qa0nw9.execute-api.ap-northeast-1.amazonaws.com/score";
 
-    // 登場する恐竜たち（必要ポイントと絵文字）
+    // 登場する恐竜データ（昇順で定義）
     const DINOS = [
-        { name: "トリケラトプス", pt: 30, emoji: "🥦 🦖" },
-        { name: "プテラノドン", pt: 60, emoji: "🦅 🦕" },
-        { name: "ティラノサウルス", pt: 100, emoji: "🍖 🦖" },
-        { name: "ブラキオサウルス", pt: 150, emoji: "🌴 🦕" },
-        { name: "スピノサウルス", pt: 200, emoji: "👑 🦖" }
+        { name: "トリケラトプス", pt: 30, emoji: "🦖" },
+        { name: "プテラノドン", pt: 60, emoji: "🦕" },
+        { name: "ティラノサウルス", pt: 100, emoji: "🦖" },
+        { name: "ブラキオサウルス", pt: 150, emoji: "🦕" },
+        { name: "スピノサウルス", pt: 200, emoji: "👑" }
     ];
 
     let timer, timeLeft = 30, score = 0, totalPoints = 0, currentAns = 0;
 
-    // 図鑑の描画
+    // 図鑑の動的描画処理
     function renderDinoList() {
         const listContainer = document.getElementById('dino-list');
         listContainer.innerHTML = '';
@@ -157,13 +157,19 @@
         document.getElementById('gained-points').innerText = score * 10;
         document.getElementById('total-points').innerText = totalPoints;
 
-        // 新しく孵化した恐竜があるかチェック
-        const hatchedDino = DINOS.slice().reverse().find(dino => totalPoints >= dino.pt);
+        // 状態の変化（今回プレイでの新規条件達成）を判定するロジック
+        const previousTotal = totalPoints - (score * 10);
+        const newlyHatched = DINOS.find(dino => previousTotal < dino.pt && totalPoints >= dino.pt);
+        const nextDino = DINOS.find(dino => totalPoints < dino.pt);
+        
         const hatchMsg = document.getElementById('hatch-message');
-        if (hatchedDino) {
-            hatchMsg.innerText = `🎉 たまごが われて 【${hatchedDino.name}】 を ゲットしたよ！`;
+
+        if (newlyHatched) {
+            hatchMsg.innerText = `🎉 たまごが われて 【${newlyHatched.name}】 を ゲットしたよ！`;
+        } else if (nextDino) {
+            hatchMsg.innerText = `つぎの たまごが われるまで あと ${nextDino.pt - totalPoints} pt！`;
         } else {
-            hatchMsg.innerText = `あと ${DINOS[0].pt - totalPoints} pt で たまごが われるよ！`;
+            hatchMsg.innerText = `✨ すべての きょうりゅうを コンプリートしたよ！ ✨`;
         }
 
         renderDinoList();
@@ -179,7 +185,7 @@
         }
     }
 
-    // 初期表示で図鑑を描画
+    // 初期化表示
     renderDinoList();
 </script>
 </body>
