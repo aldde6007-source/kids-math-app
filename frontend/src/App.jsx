@@ -12,7 +12,7 @@ const DINOS = [
 const API_URL = "https://vv06qa0nw9.execute-api.ap-northeast-1.amazonaws.com/score";
 
 export default function App() {
-  const [gameState, setGameState] = useState('start'); // 'start' | 'game' | 'result'
+  const [gameState, setGameState] = useState('start');
   const [totalPoints, setTotalPoints] = useState(() => {
     return parseInt(localStorage.getItem('kids_math_total_points')) || 0;
   });
@@ -25,12 +25,6 @@ export default function App() {
 
   const inputRef = useRef(null);
 
-  // ローカルストレージ保存
-  useEffect(() => {
-    localStorage.getItem('kids_math_total_points');
-  }, [totalPoints]);
-
-  // タイマー処理
   useEffect(() => {
     let timer;
     if (gameState === 'game' && timeLeft > 0) {
@@ -109,38 +103,56 @@ export default function App() {
     }
   };
 
+  // ★ 図鑑リセット処理（確認ダイアログ付き）
+  const resetProgress = () => {
+    if (window.confirm("ずかんを リセットして さいしょから あそぶ？")) {
+      localStorage.removeItem('kids_math_total_points');
+      setTotalPoints(0);
+    }
+  };
+
   return (
-    <div class="card">
+    <div className="card">
       <h1>🦖 きょうりゅう さんすう パーク 🦕</h1>
 
       {gameState === 'start' && (
         <div>
           <p>1ねんせいの さんすう もんだい（30びょう）</p>
           <p>せいかいして ポイントをためると<br /><b>きょうりゅうの たまご</b> が われるよ！</p>
-          <p>ぜんぶの ポイント: <span class="points" style={{ fontWeight: 'bold' }}>{totalPoints}</span> pt</p>
+          <p>ぜんぶの ポイント: <span className="points" style={{ fontWeight: 'bold' }}>{totalPoints}</span> pt</p>
           <button onClick={startGame}>ゲットしにいく！</button>
 
           <h3 style={{ marginTop: '20px', fontSize: '16px' }}>まいにちの きょうりゅうずかん</h3>
-          <div class="dino-collection">
+          <div className="dino-collection">
             {DINOS.map((dino, idx) => {
               const isUnlocked = totalPoints >= dino.pt;
               return (
-                <div key={idx} class={`dino-badge ${isUnlocked ? '' : 'locked'}`} title={`${dino.name} (${dino.pt}pt必要)`}>
+                <div key={idx} className={`dino-badge ${isUnlocked ? '' : 'locked'}`} title={`${dino.name} (${dino.pt}pt必要)`}>
                   {isUnlocked ? dino.emoji : "🥚"}
                 </div>
               );
             })}
+          </div>
+
+          {/* ★ 図鑑リセットボタン */}
+          <div style={{ marginTop: '25px' }}>
+            <button 
+              onClick={resetProgress} 
+              style={{ fontSize: '12px', padding: '6px 12px', backgroundColor: '#9ca3af', borderRadius: '8px' }}
+            >
+              🔄 ずかんを リセットする
+            </button>
           </div>
         </div>
       )}
 
       {gameState === 'game' && (
         <div>
-          <div class="stats">
-            <div>のこり: <span class="timer">{timeLeft}</span>びょう</div>
-            <div>ポイント: <span class="points">{totalPoints}</span> pt</div>
+          <div className="stats">
+            <div>のこり: <span className="timer">{timeLeft}</span>びょう</div>
+            <div>ポイント: <span className="points">{totalPoints}</span> pt</div>
           </div>
-          <div class="question">{question.text}</div>
+          <div className="question">{question.text}</div>
           <input
             ref={inputRef}
             type="number"
@@ -151,7 +163,7 @@ export default function App() {
           />
           <br />
           <button onClick={checkAnswer}>こたえる</button>
-          <div class={`feedback ${feedback.type}`}>{feedback.text}</div>
+          <div className={`feedback ${feedback.type}`}>{feedback.text}</div>
         </div>
       )}
 
@@ -159,8 +171,8 @@ export default function App() {
         <div>
           <h2>タイムアップ！</h2>
           <p>せいかいすう: <span style={{ fontSize: '24px', fontWeight: 'bold' }}>{score}</span> もん</p>
-          <p>かくとくポイント: <span class="points" style={{ fontSize: '24px', fontWeight: 'bold' }}>{resultData.gained}</span> pt</p>
-          <p>ごうけいポイント: <span class="points" style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalPoints}</span> pt</p>
+          <p>かくとくポイント: <span className="points" style={{ fontSize: '24px', fontWeight: 'bold' }}>{resultData.gained}</span> pt</p>
+          <p>ごうけいポイント: <span className="points" style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalPoints}</span> pt</p>
 
           <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#dc2626', margin: '10px 0' }}>
             {resultData.newlyHatched && `🎉 たまごが われて 【${resultData.newlyHatched.name}】 を ゲットしたよ！`}
@@ -168,13 +180,13 @@ export default function App() {
             {!resultData.newlyHatched && !resultData.nextDino && `✨ すべての きょうりゅうを コンプリートしたよ！ ✨`}
           </div>
 
-          <div class="dino-display">
+          <div className="dino-display">
             {resultData.newlyHatched ? resultData.newlyHatched.emoji : resultData.nextDino ? "🥚" : "👑🦖🦕"}
           </div>
 
           <div>
             <button onClick={() => setGameState('start')}>ずかんを みる（スタートへ）</button>
-            <button onClick={startGame} class="btn-secondary">すぐ もういちど あそぶ</button>
+            <button onClick={startGame} className="btn-secondary">すぐ もういちど あそぶ</button>
           </div>
         </div>
       )}
