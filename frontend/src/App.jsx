@@ -9,7 +9,7 @@ const DINOS = [
 ];
 
 // ★ご自身の API Gateway URL に書き換えてください
-const API_URL = "https://xxxxxx.execute-api.ap-northeast-1.amazonaws.com/score";
+const API_URL = "https://vv06qa0nw9.execute-api.ap-northeast-1.amazonaws.com/score";
 
 export default function App() {
   const [gameState, setGameState] = useState('start'); // 'start' | 'game' | 'result'
