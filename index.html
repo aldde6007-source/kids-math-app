@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>さんすう タイマーアタック！</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f9ff; text-align: center; padding: 20px; color: #333; }
+        .card { background: white; border-radius: 20px; padding: 30px; max-width: 450px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { font-size: 24px; color: #0284c7; }
+        .stats { display: flex; justify-content: space-around; font-size: 18px; margin-bottom: 20px; font-weight: bold; }
+        .points { color: #eab308; }
+        .timer { color: #ef4444; }
+        .question { font-size: 48px; font-weight: bold; margin: 20px 0; color: #1e293b; }
+        input[type="number"] { font-size: 32px; width: 120px; text-align: center; border: 3px solid #38bdf8; border-radius: 10px; padding: 5px; outline: none; }
+        button { font-size: 20px; font-weight: bold; padding: 12px 24px; border: none; border-radius: 12px; background-color: #0284c7; color: white; cursor: pointer; margin-top: 15px; }
+        button:hover { background-color: #0369a1; }
+        .feedback { font-size: 28px; font-weight: bold; height: 40px; margin-top: 10px; }
+        .correct { color: #22c55e; }
+        .wrong { color: #ef4444; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>せいかいして ポイントGET！</h1>
+    
+    <div id="start-screen">
+        <p>1ねんせいの さんすう もんだい（30びょう）</p>
+        <p>ぜんぶで なんてん とれるかな？</p>
+        <button onclick="startGame()">スタート！</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="stats">
+            <div>のこり: <span id="time" class="timer">30</span>びょう</div>
+            <div>ポイント: <span id="points" class="points">0</span> pt</div>
+        </div>
+        <div class="question" id="question">1 + 1 = ?</div>
+        <input type="number" id="answer" autofocus onkeydown="if(event.key==='Enter') checkAnswer()">
+        <br>
+        <button onclick="checkAnswer()">こたえる</button>
+        <div id="feedback" class="feedback"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2>タイムアップ！</h2>
+        <p>せいかいすう: <span id="final-score" style="font-size:24px; font-weight:bold;">0</span> もん</p>
+        <p>かくとくポイント: <span id="gained-points" class="points" style="font-size:24px; font-weight:bold;">0</span> pt</p>
+        <p>ごうけいポイント: <span id="total-points" class="points" style="font-size:24px; font-weight:bold;">0</span> pt</p>
+        <button onclick="startGame()">もういちど あそぶ</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://vv06qa0nw9.execute-api.ap-northeast-1.amazonaws.com/score";
+
+    let timer, timeLeft = 30, score = 0, totalPoints = 0, currentAns = 0;
+
+    function generateQuestion() {
+        const isAddition = Math.random() > 0.5;
+        let num1, num2;
+        if (isAddition) {
+            num1 = Math.floor(Math.random() * 9) + 1;
+            num2 = Math.floor(Math.random() * 9) + 1;
+            currentAns = num1 + num2;
+            document.getElementById('question').innerText = `${num1} + ${num2} = ?`;
+        } else {
+            num1 = Math.floor(Math.random() * 10) + 5;
+            num2 = Math.floor(Math.random() * num1) + 1;
+            currentAns = num1 - num2;
+            document.getElementById('question').innerText = `${num1} - ${num2} = ?`;
+        }
+    }
+
+    function startGame() {
+        score = 0; timeLeft = 30;
+        document.getElementById('time').innerText = timeLeft;
+        document.getElementById('points').innerText = totalPoints;
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        generateQuestion();
+        document.getElementById('answer').focus();
+
+        clearInterval(timer);
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('time').innerText = timeLeft;
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+    }
+
+    function checkAnswer() {
+        const input = document.getElementById('answer');
+        const feedback = document.getElementById('feedback');
+        const userAns = parseInt(input.value);
+        if (isNaN(userAns)) return;
+
+        if (userAns === currentAns) {
+            score++;
+            totalPoints += 10;
+            document.getElementById('points').innerText = totalPoints;
+            feedback.innerText = "○ せいかい！";
+            feedback.className = "feedback correct";
+        } else {
+            feedback.innerText = "× おしい！";
+            feedback.className = "feedback wrong";
+        }
+        input.value = '';
+        generateQuestion();
+        input.focus();
+    }
+
+    async function endGame() {
+        clearInterval(timer);
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('gained-points').innerText = score * 10;
+        document.getElementById('total-points').innerText = totalPoints;
+
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: 'child1', points: totalPoints, score: score })
+            });
+            console.log("Score saved!");
+        } catch (err) {
+            console.error("Save error:", err);
+        }
+    }
+</script>
+</body>
+</html>
