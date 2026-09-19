@@ -5,12 +5,17 @@ on:
     branches: [ "main" ]
 
 jobs:
-  terraform:
-    name: Terraform Apply
+  build-and-deploy:
+    name: Terraform Apply & Build React
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-policy: '18.x'
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -26,10 +31,7 @@ jobs:
         run: |
           BUCKET_NAME="kids-math-app-tfstate-clean2026"
           if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "Creating S3 bucket $BUCKET_NAME..."
             aws s3api create-bucket --bucket "$BUCKET_NAME" --region ap-northeast-1 --create-bucket-configuration LocationConstraint=ap-northeast-1
-          else
-            echo "S3 bucket $BUCKET_NAME already exists."
           fi
 
       - name: Terraform Init
@@ -39,3 +41,19 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: ./terraform
+
+      # --- React (Vite) ビルド処理 ---
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: ./frontend
+
+      - name: Build React App
+        run: npm run build
+        working-directory: ./frontend
+
+      # GitHub Pages への自動デプロイ
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/dist
